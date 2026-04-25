@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { AdminHeader } from "../../../components/admin/AdminHeader";
 
@@ -14,6 +15,7 @@ import { ProjectEditDialog } from "./ProjectEditDialog";
 import { ProjectTable } from "./ProjectTable";
 
 export function ProjectsPage() {
+  const router = useRouter();
   const { projects, loading, error, refetch } = useProjects();
   const { create, update, remove, busy: mutationBusy } = useProjectMutations();
 
@@ -36,6 +38,11 @@ export function ProjectsPage() {
     await refetch();
   };
 
+  const handleTraining = (project: Project) => {
+    const qs = new URLSearchParams({ projectName: project.name });
+    router.push(`/projects/${project.id}/trainings?${qs.toString()}`);
+  };
+
   return (
     <>
       <AdminHeader
@@ -55,6 +62,7 @@ export function ProjectsPage() {
         <ProjectTable
           projects={projects}
           loading={loading}
+          onTraining={handleTraining}
           onEdit={setEditProject}
           onDelete={setDeleteProject}
         />

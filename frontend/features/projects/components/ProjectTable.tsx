@@ -7,11 +7,12 @@ import { ProjectTableRow } from "./ProjectTableRow";
 type ProjectTableProps = {
   projects: Project[];
   loading: boolean;
+  onTraining: (project: Project) => void;
   onEdit: (project: Project) => void;
   onDelete: (project: Project) => void;
 };
 
-export function ProjectTable({ projects, loading, onEdit, onDelete }: ProjectTableProps) {
+export function ProjectTable({ projects, loading, onTraining, onEdit, onDelete }: ProjectTableProps) {
   if (loading) {
     return <p className="text-sm text-[var(--admin-text-muted)]">Loading projects…</p>;
   }
@@ -34,7 +35,7 @@ export function ProjectTable({ projects, loading, onEdit, onDelete }: ProjectTab
         </thead>
         <tbody className="bg-[var(--admin-surface)]">
           {projects.map((p) => (
-            <ProjectTableRow key={p.id} project={p} onEdit={onEdit} onDelete={onDelete} />
+            <ProjectTableRow key={p.id} project={p} onTraining={onTraining} onEdit={onEdit} onDelete={onDelete} />
           ))}
         </tbody>
       </table>
