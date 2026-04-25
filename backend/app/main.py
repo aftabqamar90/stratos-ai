@@ -1,16 +1,22 @@
 import os
-import logging
+from datetime import datetime, timezone
 
-from fastapi import FastAPI
-from fastapi import Request
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from scalar_fastapi import get_scalar_api_reference
+from sqlalchemy.orm import Session
 
 from app.api.health import router as health_router
+from app.api.projects import router as projects_router
+from app.core.engine import StratosEngine
+from app.database import SessionLocal, engine
+from app.models import Base, Project, TrainingResult, TrainingTask
+from app.schemas import TrainRequest, TrainResponse, TrainingResultRead
 
+# Initialize database tables on startup
+Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Stratos AI Backend")
-
+app = FastAPI(title="Stratos Engine API", docs_url=None)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,33 +24,89 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-logger = logging.getLogger("stratos.backend")
-if not logger.handlers:
-    logging.basicConfig(
-        level=os.getenv("LOG_LEVEL", "INFO"),
-        format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-    )
-
-
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    logger.info("Request started: %s %s", request.method, request.url.path)
-    response = await call_next(request)
-    logger.info(
-        "Request completed: %s %s -> %s",
-        request.method,
-        request.url.path,
-        response.status_code,
-    )
-    return response
-
 app.include_router(health_router)
+app.include_router(projects_router)
 
 
-@app.get("/scalar", include_in_schema=False)
-def scalar_docs():
-    return get_scalar_api_reference(
-        openapi_url=app.openapi_url,
-        title="Stratos AI API Docs"
-    )
+@app.get("/docs", include_in_schema=False)
+async def scalar_docs():
+    return get_scalar_api_reference(openapi_url=app.openapi_url, title=app.title)
+
+
+stratos_logic = StratosEngine(api_key=os.getenv("OPENROUTER_API_KEY"))
+
+
+# Database Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# --- 1. THE TRAINING ENDPOINT ---
+@app.post("/v1/train", response_model=TrainResponse)
+async def run_training(payload: TrainRequest, db: Session = Depends(get_db)):
+    """
+    Accepts: { project_name, task_name, prompt, data }
+    Does: Evolution via GEPA and saves results.
+    """
+    try:
+        # Step A: Ensure Project exists
+        project = db.query(Project).filter(Project.name == payload.project_name).first()
+        if not project:
+            project = Project(name=payload.project_name)
+            db.add(project)
+            db.commit()
+            db.refresh(project)
+
+        # Step B: Create a new Task
+        task = TrainingTask(project_id=project.id, task_name=payload.task_name)
+        db.add(task)
+        db.commit()
+        db.refresh(task)
+
+        # Step C: Start the Result record
+        res = TrainingResult(task_id=task.id, status="RUNNING")
+        db.add(res)
+        db.commit()
+        db.refresh(res)
+
+        # Step D: Run the DSPy/GEPA Evolution
+        sig, state = stratos_logic.evolve_task(payload.data, payload.prompt)
+
+        # Step E: Save successful state
+        res.status = "SUCCESS"
+        res.end_time = datetime.now(timezone.utc)
+        res.signature = sig
+        res.optimized_state = state
+        db.commit()
+
+        return {"id": res.id, "status": "COMPLETED"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+# --- 2. THE DATA RETRIEVAL ENDPOINTS ---
+
+
+@app.get("/v1/results/{result_id}", response_model=TrainingResultRead)
+async def get_specific_result(result_id: str, db: Session = Depends(get_db)):
+    """Fetch the final optimized prompt state for deployment."""
+    try:
+        rid = int(result_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid result_id")
+    result = db.query(TrainingResult).filter(TrainingResult.id == rid).first()
+    if not result:
+        raise HTTPException(status_code=404, detail="Result not found")
+    return {
+        "id": result.id,
+        "task_id": result.task_id,
+        "status": result.status,
+        "end_time": result.end_time,
+        "signature": result.signature,
+        "optimized_state": result.optimized_state,
+    }
