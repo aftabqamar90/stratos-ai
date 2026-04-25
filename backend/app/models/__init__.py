@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -11,6 +11,18 @@ class Project(Base):
     name = Column(String(255), unique=True, nullable=False)
 
     tasks = relationship("TrainingTask", back_populates="project")
+    trainings = relationship("ProjectTraining", back_populates="project")
+
+
+class ProjectTraining(Base):
+    __tablename__ = "project_trainings"
+    __table_args__ = (UniqueConstraint("project_id", "name", name="uq_project_trainings_project_id_name"),)
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    name = Column(String(255), nullable=False)
+
+    project = relationship("Project", back_populates="trainings")
 
 
 class TrainingTask(Base):

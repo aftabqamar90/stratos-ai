@@ -17,6 +17,22 @@ class ProjectDeleteResponse(BaseModel):
     deleted: bool
 
 
+class ProjectTrainingWrite(BaseModel):
+    project_id: int
+    name: str = Field(..., min_length=1, max_length=255, description="Unique training name within project")
+
+
+class ProjectTrainingRead(BaseModel):
+    id: int
+    project_id: int
+    name: str
+
+
+class ProjectTrainingDeleteResponse(BaseModel):
+    id: int
+    deleted: bool
+
+
 class TrainRequest(BaseModel):
     project_name: str = Field(..., min_length=1, max_length=255)
     task_name: str = Field(..., min_length=1, max_length=255)
