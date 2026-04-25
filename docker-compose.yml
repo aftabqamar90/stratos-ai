@@ -9,6 +9,8 @@ services:
       BACKEND_PORT: ${BACKEND_PORT:-501}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:500}
       DATABASE_URL: ${DATABASE_URL:-sqlite:///./stratos.db}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
 
   frontend:
     build:

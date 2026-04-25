@@ -59,3 +59,19 @@ class ProjectTaskHistory(BaseModel):
     project_id: int
     task_name: str
     results: list[TrainingResultRead]
+
+
+class DspySolveRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, description="The specific prompt or task to execute")
+    training_json: list[dict[str, Any]] = Field(
+        ...,
+        description="JSON context or examples for the task",
+    )
+
+
+class DspySolveResponse(BaseModel):
+    answer: str
+
+
+class DspyEvolvePromptResponse(BaseModel):
+    updated_prompt: str
