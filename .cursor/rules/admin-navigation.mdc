@@ -1,0 +1,11 @@
+---
+description: Admin sidebar menu — single source of truth in adminNav
+globs: frontend/components/admin/**/*.tsx,frontend/config/adminNav.ts
+alwaysApply: false
+---
+
+# Admin navigation
+
+- All primary admin links are defined in `frontend/config/adminNav.ts` as the `adminNav` array. `AdminSidebar.tsx` must map over `adminNav` only — do not duplicate link lists inside the sidebar (or future mobile menu).
+- Use `isNavActive(pathname, item)` from the same file for active styling. Dashboard (`/`) uses an exact match; other entries match their `href` or nested paths under it.
+- When you add a new top-level admin screen: add an `app/.../page.tsx`, export a feature entry component, and append one entry to `adminNav`.

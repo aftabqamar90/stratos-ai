@@ -1,0 +1,18 @@
+---
+description: Stratos frontend feature-based layout and API boundaries
+globs: frontend/**/*
+alwaysApply: false
+---
+
+# Feature modules
+
+- Put each domain under `frontend/features/<kebab-name>/` using `api/`, `hooks/`, `components/`, and `types/` as needed.
+- `app/**/page.tsx` files should stay thin: import a single feature entry component (e.g. `ProjectsPage`, `SystemStatusPage`). Do not call backend APIs directly from `app/` routes.
+- Shared layout chrome lives in `frontend/components/admin/`. Shared HTTP utilities live in `frontend/lib/api/` (e.g. `client.ts` with `apiRequest`, `apiUrl`).
+- Naming: API modules `*Api.ts`, hooks `use*.ts`, colocated types under `types/`.
+
+## Adding a feature
+
+1. Create `frontend/features/<name>/` with the API module calling `apiRequest` / `apiUrl` only.
+2. Add `frontend/app/<route>/page.tsx` that composes the feature root component.
+3. Register the route in `frontend/config/adminNav.ts` and rely on `AdminSidebar` for navigation.

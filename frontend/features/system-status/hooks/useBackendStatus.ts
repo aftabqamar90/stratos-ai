@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { fetchDbStatus, fetchHealth } from "../lib/api";
+import { fetchDbStatus, fetchHealth } from "../api/statusApi";
 
 type ApiState = {
   loading: boolean;
