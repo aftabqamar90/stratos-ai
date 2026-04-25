@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -29,7 +30,8 @@ def _parse_project_id(project_id: str) -> int:
 
 
 def _name_exists(db: Session, name: str, exclude_project_id: int | None = None) -> bool:
-    query = db.query(Project).filter(Project.name == name)
+    name_lower = name.lower()
+    query = db.query(Project).filter(func.lower(Project.name) == name_lower)
     if exclude_project_id is not None:
         query = query.filter(Project.id != exclude_project_id)
     return query.first() is not None
