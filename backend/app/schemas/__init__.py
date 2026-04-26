@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Any
 from datetime import datetime
 
@@ -31,6 +31,35 @@ class ProjectTrainingRead(BaseModel):
 class ProjectTrainingDeleteResponse(BaseModel):
     id: int
     deleted: bool
+
+
+class ProjectTrainingResultCreate(BaseModel):
+    project_training_id: int
+    prompt: str = Field(..., min_length=1, description="Basic prompt to optimize")
+    training_json: list[dict[str, Any]] = Field(
+        ...,
+        min_length=1,
+        description="Training examples. Every record must include a non-empty 'result' field.",
+    )
+
+    @field_validator("training_json")
+    @classmethod
+    def validate_training_json_result(cls, value: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        for idx, item in enumerate(value):
+            raw_result = item.get("result")
+            if raw_result is None or not str(raw_result).strip():
+                raise ValueError(f"training_json[{idx}].result is required")
+        return value
+
+
+class ProjectTrainingResultRead(BaseModel):
+    id: int
+    project_training_id: int
+    training_data: str | None = None
+    training_dspy_result: str | None = None
+    training_gepa_result: str | None = None
+    start_date_time: datetime | None = None
+    end_date_time: datetime | None = None
 
 
 class TrainRequest(BaseModel):

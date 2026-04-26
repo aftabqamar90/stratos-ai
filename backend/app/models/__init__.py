@@ -23,6 +23,21 @@ class ProjectTraining(Base):
     name = Column(String(255), nullable=False)
 
     project = relationship("Project", back_populates="trainings")
+    results = relationship("ProjectTrainingResult", back_populates="project_training")
+
+
+class ProjectTrainingResult(Base):
+    __tablename__ = "project_training_results"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_training_id = Column(Integer, ForeignKey("project_trainings.id"), nullable=False)
+    training_data = Column(Text, nullable=True)
+    training_dspy_result = Column(Text, nullable=True)
+    training_gepa_result = Column(Text, nullable=True)
+    start_date_time = Column(DateTime, nullable=True)
+    end_date_time = Column(DateTime, nullable=True)
+
+    project_training = relationship("ProjectTraining", back_populates="results")
 
 
 class TrainingTask(Base):

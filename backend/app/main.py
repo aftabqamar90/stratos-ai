@@ -14,10 +14,11 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 from app.api.health import router as health_router
 from app.api.projects import router as projects_router
 from app.api.project_trainings import router as project_trainings_router
+from app.api.project_training_results import router as project_training_results_router
 from app.api.dspy_solver import router as dspy_solver_router
 from app.core.engine import StratosEngine
 from app.database import SessionLocal, engine
-from app.models import Base, Project, ProjectTraining, TrainingResult, TrainingTask
+from app.models import Base, Project, ProjectTraining, ProjectTrainingResult, TrainingResult, TrainingTask
 from app.schemas import TrainRequest, TrainResponse, TrainingResultRead
 
 # Initialize database tables on startup
@@ -34,6 +35,7 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(projects_router)
 app.include_router(project_trainings_router)
+app.include_router(project_training_results_router)
 app.include_router(dspy_solver_router)
 
 
